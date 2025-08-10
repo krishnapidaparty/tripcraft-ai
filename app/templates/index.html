@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TripCraft AI - Travel Planner</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .form-container {
+            background: #f7fafc;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        select, input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .results-container {
+            margin-top: 30px;
+        }
+        .destination-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .destination-card:hover {
+            transform: translateY(-2px);
+        }
+        .destination-name {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        .destination-description {
+            color: #4a5568;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        .destination-cost {
+            color: #38a169;
+            font-weight: 600;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        /* Chatbot Styles */
+        .chatbot-toggle {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+            transition: transform 0.3s;
+        }
+        .chatbot-toggle:hover {
+            transform: scale(1.1);
+        }
+        .chatbot-toggle span {
+            font-size: 24px;
+            color: white;
+        }
+        
+        .chatbot-container {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 350px;
+            height: 500px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chatbot-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .chatbot-header h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+        .chatbot-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chatbot-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+        .message.user {
+            justify-content: flex-end;
+        }
+        .message.bot {
+            justify-content: flex-start;
+        }
+        .message-content {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        .message.bot .message-content {
+            background: white;
+            color: #2d3748;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 5px;
+        }
+        .message-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            margin: 0 8px;
+        }
+        .message.user .message-avatar {
+            background: #667eea;
+            color: white;
+        }
+        .message.bot .message-avatar {
+            background: #38a169;
+            color: white;
+        }
+        .chatbot-input {
+            padding: 15px;
+            border-top: 1px solid #e2e8f0;
+            background: white;
+        }
+        .chatbot-input form {
+            display: flex;
+            gap: 10px;
+        }
+        .chatbot-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        .chatbot-input button {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .typing-indicator {
+            display: none;
+            padding: 10px 15px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 15px;
+            border-bottom-left-radius: 5px;
+            margin-bottom: 15px;
+            max-width: 80%;
+        }
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #cbd5e0;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗺️ TripCraft AI</h1>
+        <p style="text-align: center; color: #718096; margin-bottom: 30px;">
+            Discover your perfect destination with AI-powered travel recommendations
+        </p>
+        
+        <div class="form-container">
+            <form hx-post="/recommend" hx-target="#results" hx-swap="innerHTML">
+                <div class="form-group">
+                    <label for="budget">Budget Range:</label>
+                    <select name="budget" id="budget" required>
+                        <option value="">Select your budget</option>
+                        <option value="500-1000">$500 - $1,000</option>
+                        <option value="1000-2000">$1,000 - $2,000</option>
+                        <option value="2000+">$2,000+</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="style">Travel Style:</label>
+                    <select name="style" id="style" required>
+                        <option value="">Select your travel style</option>
+                        <option value="adventure">Adventure</option>
+                        <option value="culture">Culture & History</option>
+                        <option value="relaxation">Relaxation</option>
+                        <option value="food">Food & Cuisine</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="duration">Trip Duration:</label>
+                    <select name="duration" id="duration" required>
+                        <option value="">Select trip duration</option>
+                        <option value="weekend">Weekend (2-3 days)</option>
+                        <option value="1week">1 Week</option>
+                        <option value="2weeks">2 Weeks</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="submit-btn">
+                    🚀 Find My Perfect Destination
+                </button>
+            </form>
+        </div>
+        
+        <div id="results" class="results-container">
+            <!-- Results will be loaded here via HTMX -->
+        </div>
+    </div>
+    
+    <!-- AI Chatbot -->
+    <div class="chatbot-toggle" onclick="toggleChatbot()">
+        <span>🤖</span>
+    </div>
+    
+    <div class="chatbot-container" id="chatbot">
+        <div class="chatbot-header">
+            <h3>🗺️ Travel AI Assistant</h3>
+            <button class="chatbot-close" onclick="toggleChatbot()">×</button>
+        </div>
+        <div class="chatbot-messages" id="chatbot-messages">
+            <div class="message bot">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    Hi! I'm your AI travel assistant. Ask me anything about travel - destinations, tips, planning advice, or general questions!
+                </div>
+            </div>
+            <div class="message bot">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <div style="margin-bottom: 10px;">Quick questions you can ask:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                        <button onclick="askQuestion('What are the best travel tips?')" style="background: #667eea; color: white; border: none; border-radius: 12px; padding: 5px 10px; font-size: 12px; cursor: pointer;">Travel Tips</button>
+                        <button onclick="askQuestion('How to plan a budget trip?')" style="background: #38a169; color: white; border: none; border-radius: 12px; padding: 5px 10px; font-size: 12px; cursor: pointer;">Budget Tips</button>
+                        <button onclick="askQuestion('Best time to visit Europe?')" style="background: #d69e2e; color: white; border: none; border-radius: 12px; padding: 5px 10px; font-size: 12px; cursor: pointer;">Best Time</button>
+                        <button onclick="askQuestion('Safety tips for solo travel?')" style="background: #e53e3e; color: white; border: none; border-radius: 12px; padding: 5px 10px; font-size: 12px; cursor: pointer;">Safety</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="typing-indicator" id="typing-indicator">
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+        <div class="chatbot-input">
+            <form onsubmit="sendMessage(event)">
+                <input type="text" id="chatbot-input" placeholder="Ask me about travel..." autocomplete="off">
+                <button type="submit">➤</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let chatbotOpen = false;
+        
+        function toggleChatbot() {
+            const chatbot = document.getElementById('chatbot');
+            chatbotOpen = !chatbotOpen;
+            chatbot.style.display = chatbotOpen ? 'flex' : 'none';
+            
+            if (chatbotOpen) {
+                document.getElementById('chatbot-input').focus();
+            }
+        }
+        
+        function sendMessage(event) {
+            event.preventDefault();
+            const input = document.getElementById('chatbot-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addMessage(message, 'user');
+            input.value = '';
+            
+            // Show typing indicator
+            showTyping();
+            
+            // Send to backend
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideTyping();
+                addMessage(data.response, 'bot');
+            })
+            .catch(error => {
+                hideTyping();
+                addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+            });
+        }
+        
+        function addMessage(text, sender) {
+            const messages = document.getElementById('chatbot-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = sender === 'user' ? '👤' : '🤖';
+            
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            content.textContent = text;
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+            messages.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            messages.scrollTop = messages.scrollHeight;
+        }
+        
+        function showTyping() {
+            document.getElementById('typing-indicator').style.display = 'block';
+            document.getElementById('chatbot-messages').scrollTop = document.getElementById('chatbot-messages').scrollHeight;
+        }
+        
+        function hideTyping() {
+            document.getElementById('typing-indicator').style.display = 'none';
+        }
+        
+        function askQuestion(question) {
+            // Add user message
+            addMessage(question, 'user');
+            
+            // Show typing indicator
+            showTyping();
+            
+            // Send to backend
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: question })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideTyping();
+                addMessage(data.response, 'bot');
+            })
+            .catch(error => {
+                hideTyping();
+                addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+            });
+        }
+        
+        // Handle Enter key
+        document.getElementById('chatbot-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage(e);
+            }
+        });
+    </script>
+</body>
+</html>

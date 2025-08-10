@@ -1,0 +1,120 @@
+{% if destinations %}
+    <div style="margin-top: 20px;">
+        <h2 style="text-align: center; color: #4a5568; margin-bottom: 20px;">
+            🎯 Perfect Destinations for You
+        </h2>
+        <p style="text-align: center; color: #718096; margin-bottom: 30px;">
+            Based on your preferences: <strong>{{ style.title() }}</strong> style, 
+            <strong>{{ budget }}</strong> budget, for <strong>{{ duration }}</strong>
+        </p>
+        
+        {% for destination in destinations %}
+                    <div class="destination-card">
+                <div class="destination-name">🌍 {{ destination.name }}</div>
+                <div class="destination-description">{{ destination.description }}</div>
+                <div class="destination-cost">💰 Estimated Cost: {{ destination.cost }}</div>
+                
+                <!-- Booking Links Section -->
+                <div style="margin-top: 15px; padding: 15px; background: linear-gradient(135deg, #f8f9fa 0%, #e2e8f0 100%); border-radius: 8px; border-left: 4px solid #667eea; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <h4 style="margin: 0 0 10px 0; color: #2d3748; font-size: 16px; display: flex; align-items: center;">
+                        🔗 Book Your Trip
+                        <span style="margin-left: auto; font-size: 12px; color: #718096; font-weight: normal;">Best Deals</span>
+                    </h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                        {% if destination.booking_links %}
+                            <a href="{{ destination.booking_links.hotels }}" target="_blank" style="text-decoration: none;">
+                                <button style="width: 100%; background: #003580; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;">
+                                    🏨 Hotels
+                                </button>
+                            </a>
+                            <a href="{{ destination.booking_links.flights }}" target="_blank" style="text-decoration: none;">
+                                <button style="width: 100%; background: #d70466; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;">
+                                    ✈️ Flights
+                                </button>
+                            </a>
+                            <a href="{{ destination.booking_links.activities }}" target="_blank" style="text-decoration: none;">
+                                <button style="width: 100%; background: #00aa6c; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;">
+                                    🎯 Activities
+                                </button>
+                            </a>
+                        {% else %}
+                            <!-- Fallback booking links -->
+                            <a href="https://www.booking.com/searchresults.html?ss={{ destination.name | urlencode }}" target="_blank" style="text-decoration: none;">
+                                <button style="width: 100%; background: #003580; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;">
+                                    🏨 Hotels
+                                </button>
+                            </a>
+                            <a href="https://www.expedia.com/Flights-Search?leg1=from:Anywhere,to={{ destination.name | urlencode }}" target="_blank" style="text-decoration: none;">
+                                <button style="width: 100%; background: #d70466; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;">
+                                    ✈️ Flights
+                                </button>
+                            </a>
+                            <a href="https://www.viator.com/{{ destination.name | replace(' ', '-') }}-attractions/d98-ttd" target="_blank" style="text-decoration: none;">
+                                <button style="width: 100%; background: #00aa6c; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;">
+                                    🎯 Activities
+                                </button>
+                            </a>
+                        {% endif %}
+                    </div>
+                    <div style="margin-top: 10px; padding: 8px; background: #e6fffa; border-radius: 6px; font-size: 12px; color: #2d3748;">
+                        💡 <strong>Pro Tip:</strong> Compare prices across platforms for the best deals. All links open in new tabs.
+                    </div>
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <button 
+                        hx-post="/generate-itinerary"
+                        hx-target="#itinerary-{{ loop.index }}"
+                        hx-swap="innerHTML"
+                        hx-vals='{"destination": "{{ destination.name }}", "budget": "{{ budget }}", "style": "{{ style }}", "duration": "{{ duration }}"}'
+                        onclick="showLoading({{ loop.index }})"
+                        style="background: #38a169; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-right: 10px;">
+                        📅 Generate Itinerary
+                    </button>
+                    <button 
+                        onclick="toggleItinerary('{{ loop.index }}')"
+                        style="background: #667eea; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                        👁️ Show/Hide Itinerary
+                    </button>
+                </div>
+                <div id="itinerary-{{ loop.index }}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                    <div class="loading" id="loading-{{ loop.index }}" style="display: none;">
+                        <p>🤖 AI is crafting your perfect itinerary...</p>
+                    </div>
+                    <!-- Itinerary will be loaded here -->
+                </div>
+            </div>
+        {% endfor %}
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button 
+                onclick="window.location.reload()" 
+                style="background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px;">
+                🔄 Try Different Preferences
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function toggleItinerary(index) {
+            const itinerary = document.getElementById('itinerary-' + index);
+            if (itinerary.style.display === 'none') {
+                itinerary.style.display = 'block';
+            } else {
+                itinerary.style.display = 'none';
+            }
+        }
+        
+        function showLoading(index) {
+            const itinerary = document.getElementById('itinerary-' + index);
+            const loading = document.getElementById('loading-' + index);
+            itinerary.style.display = 'block';
+            loading.style.display = 'block';
+        }
+    </script>
+{% else %}
+    <div class="error">
+        <h3>No recommendations found</h3>
+        <p>Please try adjusting your preferences and try again.</p>
+    </div>
+{% endif %}

@@ -1,0 +1,193 @@
+<div style="background: #f8f9fa; border-radius: 10px; padding: 20px; margin-top: 15px;">
+    <h3 style="color: #2d3748; margin-bottom: 15px; text-align: center;">
+        🗺️ {{ itinerary.destination }} - Detailed Itinerary
+    </h3>
+    
+    <div style="background: #e6fffa; border-left: 4px solid #38a169; padding: 15px; margin-bottom: 20px; border-radius: 0 8px 8px 0;">
+        <p style="margin: 0; color: #2d3748; font-style: italic;">
+            {{ itinerary.summary }}
+        </p>
+    </div>
+    
+    {% for day in itinerary.itinerary %}
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h4 style="color: #667eea; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+            📅 Day {{ day.day }}: {{ day.theme }}
+        </h4>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <div>
+                <strong style="color: #4a5568;">🌅 Morning:</strong>
+                <p style="margin: 5px 0; color: #2d3748;">{{ day.morning }}</p>
+            </div>
+            <div>
+                <strong style="color: #4a5568;">🌞 Afternoon:</strong>
+                <p style="margin: 5px 0; color: #2d3748;">{{ day.afternoon }}</p>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <strong style="color: #4a5568;">🌙 Evening:</strong>
+            <p style="margin: 5px 0; color: #2d3748;">{{ day.evening }}</p>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #f7fafc 0%, #e6fffa 100%); padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #38a169;">
+            <strong style="color: #2d3748; font-size: 16px; display: flex; align-items: center;">
+                🍽️ Dining Recommendations
+                <span style="margin-left: auto; font-size: 12px; color: #718096; font-weight: normal;">Click links for details</span>
+            </strong>
+            {% if day.meals is mapping %}
+                {% for meal_type, meal_data in day.meals.items() %}
+                    <div style="margin: 8px 0; padding: 8px; background: white; border-radius: 4px; border-left: 3px solid #38a169;">
+                        <div style="font-weight: 600; color: #2d3748; margin-bottom: 4px;">
+                            {{ meal_type.title() }}: {{ meal_data.restaurant }}
+                        </div>
+                        <div style="color: #4a5568; font-size: 14px; margin-bottom: 8px;">
+                            {{ meal_data.description }}
+                        </div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <a href="{{ meal_data.links.website }}" target="_blank" style="text-decoration: none;">
+                                <button style="background: #667eea; color: white; padding: 4px 8px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">
+                                    🌐 Website
+                                </button>
+                            </a>
+                            <a href="{{ meal_data.links.menu }}" target="_blank" style="text-decoration: none;">
+                                <button style="background: #38a169; color: white; padding: 4px 8px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">
+                                    📋 Menu
+                                </button>
+                            </a>
+                            <a href="{{ meal_data.links.booking }}" target="_blank" style="text-decoration: none;">
+                                <button style="background: #d69e2e; color: white; padding: 4px 8px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">
+                                    📅 Book
+                                </button>
+                            </a>
+                            <a href="{{ meal_data.links.reviews }}" target="_blank" style="text-decoration: none;">
+                                <button style="background: #00aa6c; color: white; padding: 4px 8px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">
+                                    ⭐ Reviews
+                                </button>
+                            </a>
+                            <a href="{{ meal_data.links.maps }}" target="_blank" style="text-decoration: none;">
+                                <button style="background: #e53e3e; color: white; padding: 4px 8px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">
+                                    🗺️ Map
+                                </button>
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p style="margin: 5px 0; color: #2d3748;">{{ day.meals }}</p>
+            {% endif %}
+        </div>
+        
+        <div style="text-align: right;">
+            <span style="background: #38a169; color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: 600;">
+                💰 {{ day.cost }}
+            </span>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; margin-top: 20px;">
+        <h4 style="margin: 0 0 10px 0;">💰 Total Trip Cost</h4>
+        <p style="font-size: 1.2em; font-weight: 600; margin: 0;">{{ itinerary.total_cost }}</p>
+    </div>
+    
+    <!-- TripAdvisor Reviews Section -->
+    <div style="margin-top: 30px; border: 2px solid #00aa6c; border-radius: 10px; padding: 20px; background: #f0fff4;">
+        <div style="text-align: center; margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #00aa6c 0%, #00cc7e 100%); border-radius: 10px; color: white;">
+            <h3 style="margin: 0; font-size: 1.5em;">⭐ TripAdvisor Reviews</h3>
+            <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">
+                {% if reviews %}
+                    Average Rating: 
+                    {% set avg_rating = (reviews | sum(attribute='rating') / reviews | length) | round(1) %}
+                    {% for i in range(avg_rating | int) %}★{% endfor %}
+                    {% if avg_rating % 1 != 0 %}½{% endif %}
+                    ({{ avg_rating }}/5) • {{ reviews | length }} reviews
+                {% else %}
+                    Real traveler experiences and tips
+                {% endif %}
+            </p>
+        </div>
+        
+        {% if reviews %}
+            {% for review in reviews %}
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div>
+                        <strong style="color: #2d3748; font-size: 16px;">{{ review.title }}</strong>
+                        <div style="color: #718096; font-size: 14px; margin-top: 2px;">by {{ review.username }}</div>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        {% for i in range(review.rating) %}
+                        <span style="color: #f6ad55; font-size: 18px;">★</span>
+                        {% endfor %}
+                        {% for i in range(5 - review.rating) %}
+                        <span style="color: #e2e8f0; font-size: 18px;">★</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <p style="color: #4a5568; line-height: 1.6; margin-bottom: 12px;">{{ review.review }}</p>
+                
+                <div style="background: #f7fafc; padding: 10px; border-radius: 6px; border-left: 3px solid #38a169;">
+                    <strong style="color: #2d3748; font-size: 14px;">💡 Traveler Tip:</strong>
+                    <p style="margin: 5px 0 0 0; color: #4a5568; font-size: 14px;">{{ review.tip }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align: center; color: #718096; padding: 20px;">
+                <p>Reviews loading...</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Quick Booking Links -->
+    <div style="margin-top: 30px; padding: 20px; background: linear-gradient(135deg, #f8f9fa 0%, #e2e8f0 100%); border-radius: 10px; border-left: 4px solid #667eea; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <h4 style="margin: 0 0 15px 0; color: #2d3748; text-align: center;">🚀 Ready to Book Your Trip?</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <a href="https://www.booking.com/searchresults.html?ss={{ itinerary.destination | urlencode }}" target="_blank" style="text-decoration: none;">
+                <button style="width: 100%; background: #003580; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center;">
+                    🏨 Book Hotels
+                </button>
+            </a>
+            <a href="https://www.expedia.com/Flights-Search?leg1=from:Anywhere,to={{ itinerary.destination | urlencode }}" target="_blank" style="text-decoration: none;">
+                <button style="width: 100%; background: #d70466; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center;">
+                    ✈️ Book Flights
+                </button>
+            </a>
+            <a href="https://www.viator.com/{{ itinerary.destination | replace(' ', '-') }}-attractions/d98-ttd" target="_blank" style="text-decoration: none;">
+                <button style="width: 100%; background: #00aa6c; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center;">
+                    🎯 Book Activities
+                </button>
+            </a>
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 20px;">
+        <button 
+            onclick="window.print()" 
+            style="background: #667eea; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-right: 10px;">
+            🖨️ Print Itinerary
+        </button>
+        <button 
+            onclick="downloadItinerary()" 
+            style="background: #38a169; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+            📥 Download PDF
+        </button>
+    </div>
+</div>
+
+<script>
+function downloadItinerary() {
+    // Simple text download for now
+    const content = document.querySelector('.itinerary-content').innerText;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '{{ itinerary.destination }}_itinerary.txt';
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+</script>
