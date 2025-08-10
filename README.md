@@ -14,6 +14,7 @@ A comprehensive AI-powered travel planning application that helps users discover
 
 ### 🛠️ Technical Features
 - **FastAPI Backend** - High-performance Python web framework
+- **MongoDB Database** - NoSQL database for user sessions, travel plans, and chat history
 - **OpenAI Integration** - GPT-3.5-turbo for AI-powered recommendations
 - **HTMX Frontend** - Dynamic, responsive interface without page reloads
 - **Modern UI/UX** - Clean, intuitive design with smooth animations
@@ -24,6 +25,7 @@ A comprehensive AI-powered travel planning application that helps users discover
 ### Prerequisites
 - Python 3.8+
 - OpenAI API key
+- MongoDB (local or cloud instance)
 
 ### Installation
 
@@ -47,7 +49,7 @@ A comprehensive AI-powered travel planning application that helps users discover
 4. **Set up environment variables**
    ```bash
    cp .env.example .env
-   # Edit .env and add your OpenAI API key
+   # Edit .env and add your OpenAI API key and MongoDB URL
    ```
 
 5. **Run the application**
@@ -101,11 +103,13 @@ Create a `.env` file with the following variables:
 ```env
 OPENAI_API_KEY=your_openai_api_key_here
 ANTHROPIC_API_KEY=your_anthropic_api_key_here  # Optional
+MONGODB_URL=mongodb://localhost:27017  # Or your MongoDB Atlas connection string
 ```
 
 ### API Keys
 - **OpenAI API Key**: Required for AI recommendations and chatbot
 - **Anthropic API Key**: Optional, for additional AI capabilities
+- **MongoDB URL**: Required for database functionality (local or MongoDB Atlas)
 
 ## 🌟 Features in Detail
 
@@ -133,6 +137,14 @@ ANTHROPIC_API_KEY=your_anthropic_api_key_here  # Optional
 - Conversational travel assistant
 - Quick question buttons for common topics
 - Real-time responses with typing indicators
+- Chat history persistence in MongoDB
+
+### MongoDB Database Features
+- **User Session Management** - Persistent user sessions and preferences
+- **Travel Plan Storage** - Save and retrieve generated itineraries
+- **Chat History** - Store and retrieve conversation history
+- **Data Analytics** - Track user preferences and popular destinations
+- **Scalable Architecture** - Ready for production deployment
 
 ## 🛠️ Development
 
@@ -146,6 +158,10 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - `POST /recommend` - Get destination recommendations
 - `POST /generate-itinerary` - Generate detailed itineraries
 - `POST /chat` - AI chatbot endpoint
+- `GET /api/travel-plans` - Get user's saved travel plans
+- `GET /api/chat-history` - Get chat history
+- `GET /api/user-preferences` - Get user preferences
+- `DELETE /api/travel-plan/{plan_id}` - Delete a travel plan
 
 ## 🚀 Deployment
 

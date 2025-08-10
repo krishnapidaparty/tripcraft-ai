@@ -1,15 +1,17 @@
 import time
 import os
 import json
+import uuid
 import requests
 from bs4 import BeautifulSoup
-from fastapi import FastAPI, Request, Form
+from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 import openai
 from pydantic import BaseModel
+from app.database import connect_to_mongo, close_mongo_connection, db_manager, TravelPlan, ChatMessage, UserSession
 
 # Chat model
 class ChatMessage(BaseModel):
@@ -21,6 +23,16 @@ load_dotenv()
 app = FastAPI()
 START_TIME = time.time()
 REQ_COUNT = {"total": 0}
+
+@app.on_event("startup")
+async def startup_event():
+    """Connect to MongoDB on startup"""
+    await connect_to_mongo()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Close MongoDB connection on shutdown"""
+    await close_mongo_connection()
 
 # Configure OpenAI
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -167,7 +179,19 @@ templates = Jinja2Templates(directory="app/templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    # Generate or get session ID
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        session_id = str(uuid.uuid4())
+    
+    # Create or get user session
+    session = await db_manager.get_user_session(session_id)
+    if not session:
+        session = await db_manager.create_user_session(session_id)
+    
+    response = templates.TemplateResponse("index.html", {"request": request})
+    response.set_cookie(key="session_id", value=session_id, httponly=True)
+    return response
 
 @app.post("/recommend", response_class=HTMLResponse)
 async def recommend_destinations(
@@ -176,6 +200,19 @@ async def recommend_destinations(
     style: str = Form(...),
     duration: str = Form(...)
 ):
+    # Get session ID
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        session_id = str(uuid.uuid4())
+    
+    # Update user preferences in MongoDB
+    preferences = {
+        "budget": budget,
+        "style": style,
+        "duration": duration,
+        "last_search": time.time()
+    }
+    await db_manager.update_user_session(session_id, preferences)
     try:
         # Create a structured prompt for OpenAI
         prompt = f"""
@@ -418,6 +455,21 @@ async def generate_itinerary(
                         'links': get_restaurant_links(restaurant_name, destination)
                     }
         
+        # Save travel plan to MongoDB
+        session_id = request.cookies.get("session_id")
+        if session_id:
+            travel_plan = TravelPlan(
+                plan_id=str(uuid.uuid4()),
+                session_id=session_id,
+                destination=destination,
+                budget=budget,
+                style=style,
+                duration=duration,
+                itinerary=itinerary_data,
+                reviews=reviews
+            )
+            await db_manager.save_travel_plan(travel_plan)
+        
         # Render the itinerary
         return templates.TemplateResponse(
             "itinerary.html", 
@@ -438,6 +490,10 @@ async def generate_itinerary(
 
 @app.post("/chat")
 async def chat_with_ai(chat_message: ChatMessage, request: Request):
+    # Get session ID
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        session_id = str(uuid.uuid4())
     """
     AI chatbot endpoint for travel-related questions
     """
@@ -480,6 +536,15 @@ async def chat_with_ai(chat_message: ChatMessage, request: Request):
         
         ai_response = response.choices[0].message.content.strip()
         
+        # Save chat message to MongoDB
+        chat_record = ChatMessage(
+            message_id=str(uuid.uuid4()),
+            session_id=session_id,
+            user_message=chat_message.message,
+            ai_response=ai_response
+        )
+        await db_manager.save_chat_message(chat_record)
+        
         return JSONResponse(content={"response": ai_response})
         
     except Exception as e:
@@ -487,3 +552,54 @@ async def chat_with_ai(chat_message: ChatMessage, request: Request):
             content={"response": "I'm sorry, I'm having trouble connecting right now. Please try again in a moment."},
             status_code=500
         )
+
+# MongoDB-powered endpoints
+@app.get("/api/travel-plans")
+async def get_travel_plans(request: Request):
+    """Get all travel plans for the current session"""
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        return JSONResponse(content={"plans": []})
+    
+    plans = await db_manager.get_travel_plans(session_id)
+    return JSONResponse(content={"plans": [plan.dict() for plan in plans]})
+
+@app.get("/api/chat-history")
+async def get_chat_history(request: Request, limit: int = 20):
+    """Get chat history for the current session"""
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        return JSONResponse(content={"messages": []})
+    
+    messages = await db_manager.get_chat_history(session_id, limit)
+    return JSONResponse(content={"messages": [msg.dict() for msg in messages]})
+
+@app.get("/api/user-preferences")
+async def get_user_preferences(request: Request):
+    """Get user preferences for the current session"""
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        return JSONResponse(content={"preferences": {}})
+    
+    session = await db_manager.get_user_session(session_id)
+    if session:
+        return JSONResponse(content={"preferences": session.preferences})
+    return JSONResponse(content={"preferences": {}})
+
+@app.delete("/api/travel-plan/{plan_id}")
+async def delete_travel_plan(plan_id: str, request: Request):
+    """Delete a specific travel plan"""
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=401, detail="Session not found")
+    
+    # Delete the plan (you'll need to add this method to DatabaseManager)
+    result = await db_manager.db.travel_plans.delete_one({
+        "plan_id": plan_id,
+        "session_id": session_id
+    })
+    
+    if result.deleted_count > 0:
+        return JSONResponse(content={"message": "Plan deleted successfully"})
+    else:
+        raise HTTPException(status_code=404, detail="Plan not found")

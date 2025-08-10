@@ -7,3 +7,5 @@ openai
 requests
 beautifulsoup4
 lxml
+motor
+pymongo
